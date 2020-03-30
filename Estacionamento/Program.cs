@@ -17,9 +17,9 @@ namespace EstacionamentoGradual
 
     public static class TabelaCobranca
     {
-        public const decimal precoHR = 2M;
-        public const decimal precoAdicionalHr = 0.5M;
-        public const decimal precoPacote24Hr = 10M;
+        public const double precoHR = 2;
+        public const double precoAdicionalHr = 0.5;
+        public const double precoPacote24Hr = 10;
 
     }
 
@@ -42,10 +42,8 @@ namespace EstacionamentoGradual
 
     public class Estacionamento
     {
-        public void calculaCusto(){
-
-            double quantidadeHora;
-            double custoTotal = 1;
+        public void calculaCusto(){            
+            
 
             dynamic[,] carros = new dynamic[4, 4];
 
@@ -79,9 +77,6 @@ namespace EstacionamentoGradual
 
 
 
-
-
-
             for (var i = 0; i <= novoCarro.Count; i++)
             {
                 foreach (var item in novoCarro)
@@ -90,15 +85,39 @@ namespace EstacionamentoGradual
                                       "O carro de placa: {1} \n" +
                                       "Ficou estacionado por: {2}\n" +
                                       "Pagando o valor total de: {3}", item.data.ToShortDateString(), item.placa,
-                                      showHora(carros[i, 2], carros[i, 3]), custoTotal);
+                                      showHora(carros[i, 2], carros[i, 3]), custoTotal(calculoHora(carros[i, 2], carros[i, 3])));
                     Console.WriteLine("-----------------------------------------------------");
                     i++;
                 }
             }
+                
+         }
 
+            double custoTotal(double hora)
+            {
+            double resultado;
+            resultado = 0;
+            
+            for (int i = 0; i <= hora; i++)
+            {
+                if (hora <= 3)
+                {
+                    resultado = TabelaCobranca.precoHR;
+                }
+                    
+                if (hora > 3)
+                    {
+                        resultado = TabelaCobranca.precoHR;
+                        resultado += TabelaCobranca.precoAdicionalHr;
+                    }
+                if(resultado >= 24)
+                    {
+                        resultado = TabelaCobranca.precoPacote24Hr;
+                    }
                 
 
-
+               }
+              return resultado;
             }
 
             double calculoHora(DateTime hora1, DateTime hora2)
