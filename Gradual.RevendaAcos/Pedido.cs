@@ -103,7 +103,8 @@ namespace Gradual.RevendaAcos
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Erro {0}", ex);
+                Console.WriteLine("Quantidade inválida!");
+                RealizarPedido();
             }
         }
 
