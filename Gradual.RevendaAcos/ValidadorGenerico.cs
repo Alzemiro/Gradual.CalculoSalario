@@ -20,7 +20,7 @@ namespace Gradual.RevendaAcos
             else
             {
                 Console.Write("Digite uma quantidade válida: ");
-                AceitaApenasNumeros(entrada);
+                entrada = AceitaApenasNumeros(entrada);
             }
             return entrada;
         }
