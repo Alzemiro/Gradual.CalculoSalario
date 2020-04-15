@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Gradual.RevendaAcos
 {
-    public class Pedido : TabelaDesconto
+    public class Pedido : ITabelaDesconto
     {
         public int ProdutoId;
         public decimal Quantidade;
@@ -158,12 +158,13 @@ namespace Gradual.RevendaAcos
 
         }
 
-        public override void AplicaDesconto(decimal valor, decimal quantidade)
+        public void AplicaDesconto(decimal valor, decimal quantidade)
         {
             //A melhor forma que encontrei para mostrar os descontos foi instanciar 2 StringBuilders
             StringBuilder sbValor = new StringBuilder();
             StringBuilder sbKg = new StringBuilder();
-            
+            bool DescontoAplicado = false;
+
             var valorMenor5000 = false;
             decimal novoValor = 0M;
             decimal novoValorTotal = 0M;
@@ -177,9 +178,9 @@ namespace Gradual.RevendaAcos
                     //Utilizei a quantidade total para aplicar o desconto de 10% a todos os produtos
                     if (quantidade > 50)
                     {
-                        sbKg.AppendFormat("{0}: {1} - {2}", produto.Descricao, produto.ValorKg.ToString("C"), (Acima50Kg).ToString("P"));
+                        sbKg.AppendFormat("{0}: {1} - {2}", produto.Descricao, produto.ValorKg.ToString("C"), (ITabelaDesconto.Acima50Kg).ToString("P"));
                         //Aplicação de 10% em cada produto
-                        produto.ValorKg = produto.ValorKg - (produto.ValorKg * Acima50Kg);
+                        produto.ValorKg = produto.ValorKg - (produto.ValorKg * ITabelaDesconto.Acima50Kg);
                         //Recalculo do Valor total
                         novoValor = Pedidos.Where(x => x.ProdutoId.Equals(produto.Id)).Sum(s => s.Quantidade * produto.ValorKg);
                         novoValorTotal += novoValor;
@@ -199,7 +200,7 @@ namespace Gradual.RevendaAcos
             Console.WriteLine(sbKg.ToString());
 
             //Fim do recalculo
-            if (valorMenor5000)
+            if (valorMenor5000 && quantidade < 300)
             {               
                 sbValor.AppendFormat("Valor total com desconto: {0}  ", novoValorTotal.ToString("C"));
                 Console.WriteLine(sbValor.ToString());
@@ -207,10 +208,10 @@ namespace Gradual.RevendaAcos
             
 
             //Ultima validação aplicando o desconto de 5% 
-            if (novoValorTotal > 5000)
+            if (novoValorTotal > 5000 || quantidade >= 300)
             {
-                sbValor.AppendFormat("Valor total: {0} - {1} = ", novoValorTotal.ToString("C"), Acima5000Reais.ToString("P"));                
-                novoValorTotal = novoValorTotal - (novoValorTotal * Acima5000Reais);
+                sbValor.AppendFormat("Valor total: {0} - {1} = ", novoValorTotal.ToString("C"), ITabelaDesconto.Acima5000Reais.ToString("P"));                
+                novoValorTotal = novoValorTotal - (novoValorTotal *  ITabelaDesconto.Acima5000Reais);
                 sbValor.AppendFormat("{0} \n", novoValorTotal.ToString("C"));
                 Console.WriteLine(sbValor.ToString());
             }
