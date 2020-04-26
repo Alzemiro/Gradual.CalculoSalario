@@ -10,6 +10,7 @@ namespace Gradual.RevendaAcos
         {
             Pedido pd = new Pedido();
             string escolha = string.Empty;
+            
 
             while (escolha != "0")
             {

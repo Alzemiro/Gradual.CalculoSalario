@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace Gradual.RevendaAcos
 {
-    public class Pedido : Produto, ITabelaDesconto<Pedido>
+    public class Pedido : ITabelaDesconto
     {
         public int ProdutoId { get; set; }
         public decimal Quantidade { get; set; }
@@ -27,16 +27,24 @@ namespace Gradual.RevendaAcos
         public Pedido()
         {
             this.ProdutoId = 0;
-            this.Quantidade = 0.0m;
+            this.Quantidade = 0m;
             this.DataPedido = DateTime.UtcNow;
+            this.ValorTotalPedido = 0m;
+            this.ValorTotalCompra = 0m;
+            this.PedidoKg = 0m;
+            this.TotalKG = 0m;
             this.DescontoAplicado2 = false;
+
         }
 
+        //Foi necessária a sobrecarga do construtor Pedido, pois na linha 80 não é possivel a conversão de um
+        //tipo Pedido para um tipo Produto, sendo necessário utilizar o Pedido.add(novoPedido), 
+        //onde o mesmo recebe informações da Classe Produto.
+        //Em resumo, um Pedido somente é efetuado caso o Id do produto exista na Classe Produto     
 
-        public List<Pedido> Pedidos = new List<Pedido>();
-        public List<Pedido> PedidoFinalizado = new List<Pedido>();
+        private List<Pedido> Pedidos = new List<Pedido>();
 
-        public List<Produto> Produtos = new List<Produto> {
+        private List<Produto> Produtos = new List<Produto> {
             new Produto { Id = 1, Descricao = "Alumínio", ValorKg = 9.80m },
             new Produto { Id = 2, Descricao = "Carbono",   ValorKg = 12.50m }
 
@@ -50,7 +58,6 @@ namespace Gradual.RevendaAcos
 
             while (sair != "0")
             {
-                Console.Clear();
                 Console.WriteLine("------------------------------\n" +
                                   "Revenda de Aços Gradual\n" +
                                   "------------------------------\n");
@@ -62,7 +69,6 @@ namespace Gradual.RevendaAcos
             }
             Console.Clear();
             CalculoPedido();
-
         }
 
 
@@ -96,9 +102,9 @@ namespace Gradual.RevendaAcos
                     Pedidos.Add(new Pedido
                     {
                         ProdutoId = p.Id,
-                        Quantidade = decimal.Parse(entradaQuantidade, CultureInfo.InvariantCulture),
-
+                        Quantidade = decimal.Parse(entradaQuantidade, CultureInfo.InvariantCulture)
                     });
+
                 }
                 else
                 {
@@ -120,13 +126,10 @@ namespace Gradual.RevendaAcos
         //Aqui foi onde tive mais dificuldades, porém acho que encontrei uma solução interessante
         public void CalculoPedido()
         {
-            decimal valorTotalCompra = 0m;
-            decimal valorPedido = 0m;
-            decimal totalKgPedido = 0m;
+            decimal TotalValorPedido = 0m;
+            decimal TotalKgPedido = 0m;
+            decimal TotalValor = 0m;
             decimal TotalKg = 0m;
-            
-
-            Pedido novoPedido = new Pedido();
 
             //Tenho que percorrer a lista de produtos para fazer uma nova verificação, onde se existir um pedido
             //com determinado produto deve-se seguir os calculos
@@ -135,127 +138,116 @@ namespace Gradual.RevendaAcos
                 //Somente exibirá em tela e realizar calculos nos produtos que foram pedidos
                 if (Pedidos.Exists(x => x.ProdutoId.Equals(p.Id)))
                 {
+
                     //Soma a quantidade de Kg solicitados pelo cliente, se o Id do produto for igual ao ProdutoId que está no pedido
-                    totalKgPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade);
+                    TotalKgPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade);
 
                     //Multiplica a quantidade de Kg pelo valor, se o Id do produto for igual ao ProdutoId que está no pedido
-                    valorPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade * p.ValorKg);
+                    TotalValorPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade * p.ValorKg);
 
                     //Soma KG
-                    TotalKg += totalKgPedido;
+                    TotalKg += TotalKgPedido;
 
                     //Soma Total
-                    valorTotalCompra += valorPedido;
+                    TotalValor += TotalValorPedido;
 
-
-                    novoPedido = new Pedido
-                    {
-                        ProdutoId = p.Id,
-                        Descricao = p.Descricao,
-                        PedidoKg = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade),
-                        ValorTotalPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade * p.ValorKg),
-                        ValorKg = p.ValorKg,
-                        
-                        
-                    };
-
+                    Console.WriteLine("--------------------------");
+                    //Verifica a quantidade de pedidos para cada Item
+                    Console.WriteLine("Total de pedidos de {0}: {1}", p.Descricao, Pedidos.Count(r => r.ProdutoId.Equals(p.Id)));
+                    //Exibe o valor em R$ do Kg
+                    Console.WriteLine("Valor unitário do {0}: {1}", p.Descricao, p.ValorKg.ToString("C"));
+                    Console.WriteLine("Quantidade total em Kg solicitada: {0}", TotalKgPedido);
+                    Console.WriteLine("Valor total por pedido: {0}", TotalValorPedido.ToString("C"));
+                    Console.WriteLine("--------------------------");
                 }
 
             }
-            PedidoFinalizado.Add(novoPedido);
-            Console.Clear();
-            Console.WriteLine("--------------------------\n");
-            Console.WriteLine("Valor total da Compra: {0}", valorTotalCompra.ToString("C"));
+
+            Console.WriteLine("Valor total da Compra: {0}", TotalValor.ToString("C"));
             Console.WriteLine("Total de Kg: {0}", TotalKg.ToString());
             Console.WriteLine("--------------------------");
             Console.WriteLine("Descontos");
             Console.WriteLine("--------------------------");
-
-            var s = PedidoFinalizado.Select(s => s.DescontoAplicado2).FirstOrDefault();
-
-            if(s == false){
-                AplicaDesconto(PedidoFinalizado);
+            AplicaDesconto(TotalValor, TotalKg);
+            
+            foreach(var p in Pedidos)
+            {
+                p.PedidoKg = TotalKgPedido;                                
+                p.ValorTotalCompra = TotalValor;
             }
-
         }
 
-        public void AplicaDesconto(List<Pedido> lista)
+        public void AplicaDesconto(decimal valor, decimal quantidade)
         {
             //A melhor forma que encontrei para mostrar os descontos foi instanciar 2 StringBuilders
             StringBuilder sbValor = new StringBuilder();
             StringBuilder sbKg = new StringBuilder();
             bool DescontoAplicado = false;
-            bool valorMenor5000 = false;
-            bool valorMenor5000QuantidadeMenor300 = false;
-            bool valorMaior5000Quantiade300 = false;
 
-            decimal valorTotal10P = 0m;
-            decimal valorTotal5P = 0m;
+            var valorMenor5000 = false;
+            decimal novoValor = 0M;
+            decimal novoValorTotal = 0M;
 
 
-
-            foreach (var p in PedidoFinalizado)
+            foreach (var produto in Produtos)
             {
 
-
-
+                
+                if (Pedidos.Exists(p => p.ProdutoId.Equals(produto.Id)))
+                {
+                    
                     //Utilizei a quantidade total para aplicar o desconto de 10% a todos os produtos
-                    p.TotalKG = PedidoFinalizado.Sum(x => x.PedidoKg);
-
-                    if (p.TotalKG > 50)
+                    if (quantidade > 50)
                     {
-                        sbKg.AppendFormat("{0}: {1} - {2}", p.Descricao, p.ValorKg.ToString("C"), (ITabelaDesconto<Pedido>.Acima50Kg).ToString("P"));
-
-                        //Aplicação de 10% em cada produto                    
-                        p.ValorKg = p.ValorKg - (p.ValorKg * ITabelaDesconto<Pedido>.Acima50Kg);
-                        p.ValorTotalPedido = p.ValorTotalPedido - (p.ValorTotalPedido * 0.1M);
-                        sbKg.AppendFormat(" = {0}, Valor com Desconto: {1} \n", p.ValorKg.ToString("C"), p.ValorTotalPedido.ToString("C"));
-
+                        
+                        sbKg.AppendFormat("{0}: {1} - {2}", produto.Descricao, produto.ValorKg.ToString("C"), (ITabelaDesconto.Acima50Kg).ToString("P"));
+                        //Aplicação de 10% em cada produto
+                        produto.ValorKg = produto.ValorKg - (produto.ValorKg * ITabelaDesconto.Acima50Kg);
                         //Recalculo do Valor total
-                        p.ValorTotalCompra = PedidoFinalizado.Sum(t => t.ValorTotalPedido);
-                        DescontoAplicado = true;
-                        
-                        
+                        novoValor = Pedidos.Where(x => x.ProdutoId.Equals(produto.Id)).Sum(s => s.Quantidade * produto.ValorKg);
 
+
+                        //Bug no relatório por data
+                        var t = Pedidos.FindIndex(s => s.ProdutoId.Equals(produto.Id));
+                        Pedidos[t].ValorTotalPedido = novoValor;
+
+                        novoValorTotal += novoValor;
+                        sbKg.AppendFormat(" = {0}, Valor com Desconto: {1} \n", produto.ValorKg.ToString("C"), novoValor.ToString("C"));
+
+                        DescontoAplicado = true;
                     }
-                    if (p.ValorTotalCompra < 5000 && DescontoAplicado)
+                    //Inicio do recalculo do valor total, onde levo em consideração os novos valores e sinalizo para o algoritimo
+                    //que o valor total é menos que 5000
+                    if (novoValorTotal < 5000 && DescontoAplicado)
                     {
                         valorMenor5000 = true;
                     }
-                    if (valorMenor5000 && p.TotalKG < 300)
-                    {
-                        valorMenor5000QuantidadeMenor300 = true;
-                    }
-                    if (p.ValorTotalCompra > 5000 || p.TotalKG >= 300)
-                    {
-                        valorMaior5000Quantiade300 = true;
-                        valorTotal10P = p.ValorTotalCompra;
-                        p.ValorTotalCompra = p.ValorTotalCompra - (p.ValorTotalCompra * ITabelaDesconto<Pedido>.Acima5000Reais);
-                        valorTotal5P = p.ValorTotalCompra;
-                    }                    
-                
+                }
             }
 
             Console.WriteLine(sbKg.ToString());
 
-
-            if (valorMenor5000QuantidadeMenor300)
+            //Fim do recalculo
+            if (valorMenor5000 && quantidade < 300)
             {
-                sbValor.AppendFormat("Valor total com desconto: {0}  ", valorTotal10P.ToString("C"));
+                sbValor.AppendFormat("Valor total com desconto: {0}  ", novoValorTotal.ToString("C"));
                 Console.WriteLine(sbValor.ToString());
             }
 
 
             //Ultima validação aplicando o desconto de 5% 
-            if (valorMaior5000Quantiade300)
+            if (novoValorTotal > 5000 || quantidade >= 300)
             {
-                sbValor.AppendFormat("Valor total: {0} - {1} = ", valorTotal10P.ToString("C"), ITabelaDesconto<Pedido>.Acima5000Reais.ToString("P"));
-                sbValor.AppendFormat("{0} \n", valorTotal5P.ToString("C"));
+                sbValor.AppendFormat("Valor total: {0} - {1} = ", novoValorTotal.ToString("C"), ITabelaDesconto.Acima5000Reais.ToString("P"));
+                novoValorTotal = novoValorTotal - (novoValorTotal * ITabelaDesconto.Acima5000Reais);
+                sbValor.AppendFormat("{0} \n", novoValorTotal.ToString("C"));
                 Console.WriteLine(sbValor.ToString());
             }
 
-            
-
+            foreach (var p in Pedidos)
+            {              
+                p.ValorTotalCompra = novoValorTotal;
+            }
         }
 
         public void Relatorios()
@@ -283,15 +275,15 @@ namespace Gradual.RevendaAcos
                     break;
                 case "2":
                     Console.Clear();
-                    reportCompras.ComprasData(PedidoFinalizado, Produtos);
+                    reportCompras.ComprasData(Pedidos, Produtos);
                     break;
                 case "3":
                     Console.Clear();
-                    reportCompras.ValorMedioCompras(PedidoFinalizado, Produtos);
+                    reportCompras.ValorMedioCompras(Pedidos, Produtos);
                     break;
                 case "4":
                     Console.Clear();
-                    reportCompras.MaiorPedido(PedidoFinalizado, Produtos);
+                    reportCompras.MaiorPedido(Pedidos, Produtos);
                     break;
                 default:
                     Console.WriteLine("\nSelecione um relatório válido \n");
@@ -300,8 +292,6 @@ namespace Gradual.RevendaAcos
 
         }
 
-
     }
 }
-
 

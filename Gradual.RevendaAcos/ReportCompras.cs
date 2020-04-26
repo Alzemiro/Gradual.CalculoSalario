@@ -121,7 +121,7 @@ namespace Gradual.RevendaAcos
                                     pedido.ValorTotalPedido
                                 };
                 var maxPedido = queryHist.Select(s => s.ValorTotalPedido).Max();
-                Console.WriteLine("O pedidode maior valor: {0}", maxPedido.ToString("C"));
+                Console.WriteLine("O pedido de maior valor: {0}", maxPedido.ToString("C"));
             }
             else
             {
