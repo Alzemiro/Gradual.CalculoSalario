@@ -209,9 +209,16 @@ namespace Gradual.RevendaAcos
                         
                         sbKg.AppendFormat("{0}: {1} - {2}", produto.Descricao, produto.ValorKg.ToString("C"), (ITabelaDesconto.Acima50Kg).ToString("P"));
                         //Aplicação de 10% em cada produto
+                        
+                        
                         produto.ValorKg = produto.ValorKg - (produto.ValorKg * ITabelaDesconto.Acima50Kg);
+                            
+                        if(Pedidos.Exists(s => s.DescontoAplicado2 == false))
+                        {
+                            novoValor = Pedidos.Where(x => x.ProdutoId.Equals(produto.Id)).Sum(s => s.Quantidade * produto.ValorKg);
+
+                        }
                         //Recalculo do Valor total
-                        novoValor = Pedidos.Where(x => x.ProdutoId.Equals(produto.Id)).Sum(s => s.Quantidade * produto.ValorKg);
 
 
                         //Bug no relatório por data
@@ -233,7 +240,10 @@ namespace Gradual.RevendaAcos
             }
 
             foreach(var p in Pedidos)
-            {                
+            {               
+                
+                p.DescontoAplicado2 = true;
+                
                 if (valores.ContainsKey(p.ProdutoId))
                 {
                     p.ValorTotalPedido = (decimal)valores[p.ProdutoId];
