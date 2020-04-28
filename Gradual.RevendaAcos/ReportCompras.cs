@@ -58,7 +58,7 @@ namespace Gradual.RevendaAcos
                                 select new
                                 {
                                     produtoDescricao = produto.Descricao,
-                                    pedidoQuantidade = pedido.PedidoKg,
+                                    pedidoQuantidade = pedido.Quantidade,
                                     pedidoData = pedido.DataPedido,
                                     valorPedido = pedido.ValorTotalPedido
                                 };

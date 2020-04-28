@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -102,8 +103,13 @@ namespace Gradual.RevendaAcos
                     Pedidos.Add(new Pedido
                     {
                         ProdutoId = p.Id,
-                        Quantidade = decimal.Parse(entradaQuantidade, CultureInfo.InvariantCulture)
-                    });
+                        Quantidade = decimal.Parse(entradaQuantidade, CultureInfo.InvariantCulture),
+                        DataPedido = DateTime.UtcNow,
+                        ValorTotalPedido = 0m,
+                        ValorTotalCompra = 0m,
+                        PedidoKg = 0m,
+                        TotalKG = 0m
+                });
 
                 }
                 else
@@ -135,6 +141,7 @@ namespace Gradual.RevendaAcos
             //com determinado produto deve-se seguir os calculos
             foreach (var p in Produtos)
             {
+                
                 //Somente exibirá em tela e realizar calculos nos produtos que foram pedidos
                 if (Pedidos.Exists(x => x.ProdutoId.Equals(p.Id)))
                 {
@@ -144,7 +151,8 @@ namespace Gradual.RevendaAcos
 
                     //Multiplica a quantidade de Kg pelo valor, se o Id do produto for igual ao ProdutoId que está no pedido
                     TotalValorPedido = Pedidos.Where(x => x.ProdutoId.Equals(p.Id)).Sum(s => s.Quantidade * p.ValorKg);
-
+                    
+                    //T.ValorTotalPedido = TotalValorPedido; 
                     //Soma KG
                     TotalKg += TotalKgPedido;
 
@@ -173,7 +181,7 @@ namespace Gradual.RevendaAcos
             foreach(var p in Pedidos)
             {
                 p.PedidoKg = TotalKgPedido;                                
-                p.ValorTotalCompra = TotalValor;
+                p.ValorTotalCompra = TotalValor;                
             }
         }
 
@@ -187,16 +195,15 @@ namespace Gradual.RevendaAcos
             var valorMenor5000 = false;
             decimal novoValor = 0M;
             decimal novoValorTotal = 0M;
-
-
+            Hashtable valores = new Hashtable();
+            
             foreach (var produto in Produtos)
             {
-
-                
+          
                 if (Pedidos.Exists(p => p.ProdutoId.Equals(produto.Id)))
                 {
                     
-                    //Utilizei a quantidade total para aplicar o desconto de 10% a todos os produtos
+                   //Utilizei a quantidade total para aplicar o desconto de 10% a todos os produtos
                     if (quantidade > 50)
                     {
                         
@@ -208,8 +215,7 @@ namespace Gradual.RevendaAcos
 
 
                         //Bug no relatório por data
-                        var t = Pedidos.FindIndex(s => s.ProdutoId.Equals(produto.Id));
-                        Pedidos[t].ValorTotalPedido = novoValor;
+                        valores.Add(produto.Id, novoValor);                       
 
                         novoValorTotal += novoValor;
                         sbKg.AppendFormat(" = {0}, Valor com Desconto: {1} \n", produto.ValorKg.ToString("C"), novoValor.ToString("C"));
@@ -222,7 +228,16 @@ namespace Gradual.RevendaAcos
                     {
                         valorMenor5000 = true;
                     }
+                       
                 }
+            }
+
+            foreach(var p in Pedidos)
+            {                
+                if (valores.ContainsKey(p.ProdutoId))
+                {
+                    p.ValorTotalPedido = (decimal)valores[p.ProdutoId];
+                } 
             }
 
             Console.WriteLine(sbKg.ToString());
